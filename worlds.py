@@ -1,10 +1,11 @@
-import random 
+import random
+import numpy as np
 
-class World(self):
+class World:
 	def __init__(self, world_type):
 		# string: "stochastic" /  "deterministic" / "adversarial"
 		self.world_type = world_type 
-		self.labels = [0, 1] # lost or won
+		self.labels = [-1, 1] # lost or won
 		self.win_every_nth = 3 # sets our deterministic world
 
 	def get_label(self, **kwargs):
@@ -16,7 +17,7 @@ class World(self):
 			if not kwargs['time_step']%self.win_every_nth:
 				return 1
 			else:
-				return 0 
+				return -1 
 
 		# listens to kwargs['expert_pred'], and kwargs['expert_weights']
 		if self.world_type == "adversarial":
@@ -25,11 +26,10 @@ class World(self):
 			expert_weights = kwargs['expert_weights'] # type: list
 			
 			# calculate weighted sum
-			weighted_preds = [pred*weight for (pred, weight) in zip(expert_pred, expert_weights)] 
-			weighted_sum = sum(weighted_preds)
+			wma_pred = np.sign(np.dot(expert_pred, expert_weights)) # -1 if x < 0, 0 if x==0, 1 if x > 0
 
 			# hashtag be the adversary you want to see in the world. 
-			if weighted_sum > 0:
-				return 0
+			if wma_pred == 0 or wma_pred == 1:
+				return -1
 			else:
 				return 1
